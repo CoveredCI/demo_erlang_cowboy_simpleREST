@@ -89,7 +89,11 @@ id(Req) ->
                     {stop, Req5, State};
                 ItemId ->
                     Rep = sample_crud_store:put(ItemId, Item),
-                    Req3 = cowboy_req:set_resp_body(jsx:encode(Rep), Req2),
+                    MaybeAlteredRep = case <<>> =:= maps:get(<<"name">>, Rep) of
+                                          false -> Rep;
+                                          true -> maps:put(<<"name">>, 42, Rep)
+                                      end,
+                    Req3 = cowboy_req:set_resp_body(jsx:encode(MaybeAlteredRep), Req2),
                     Req4 = cowboy_req:reply(201, Req3),
                     ?LOG_DEBUG("PUT ~p", [ItemId]),
                     {stop, Req4, State}

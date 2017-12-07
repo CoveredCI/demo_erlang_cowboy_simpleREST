@@ -17,22 +17,22 @@ declare -i i=0
 
 STARs[$i]=fuzzymonkey.star
 Vs[$i]=0
-Ts[$i]=0
+Ts[$i]=6
 ((i+=1)) # Funny Bash thing: ((i++)) returns 1 only when i=0
 
 STARs[$i]=fuzzymonkey__start_reset_stop_docker.star
 Vs[$i]=0
-Ts[$i]=0
+Ts[$i]=6
 ((i+=1))
 
 STARs[$i]=fuzzymonkey__start_reset_stop.star
 Vs[$i]=0
-Ts[$i]=0
+Ts[$i]=6
 ((i+=1))
 
 STARs[$i]=fuzzymonkey__start_reset_stop_json.star
 Vs[$i]=0
-Ts[$i]=0
+Ts[$i]=6
 ((i+=1))
 
 STARs[$i]=fuzzymonkey__start_reset_stop_failing_script.star
@@ -42,7 +42,7 @@ Ts[$i]=7
 
 STARs[$i]=fuzzymonkey__env.star
 Vs[$i]=0
-Ts[$i]=0
+Ts[$i]=6
 ((i+=1))
 
 STARs[$i]=fuzzymonkey__doc_typo.star
