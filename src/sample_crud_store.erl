@@ -108,7 +108,7 @@ handle_call({patch, Key, Value}, _From, State) ->
 handle_call({delete, Key}, _From, State) ->
     {reply, d(Key), State};
 handle_call(erase, _From, State) ->
-    {reply, e(), State};
+    {stop, e(), State};
 handle_call({peek, Key}, _From, State) ->
     {reply, undefined =/= r(Key), State}.
 
