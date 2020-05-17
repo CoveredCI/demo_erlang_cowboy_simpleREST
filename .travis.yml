@@ -1,60 +1,56 @@
 sudo: false
 language: erlang
-otp_release: 20.2
+otp_release: 22.0
 
 cache:
   directories:
-    - ~/.local/bin
+  - ~/.local/bin
 
 before_script:
-  - curl -# --fail --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
-  - chmod +x /usr/local/bin/rebar3
-  - rebar3 --version
-  - monkey --update || sh <(curl -#fSL http://goo.gl/3d7tPe -A "$UA" -e "$R")
-  - monkey --version
+- curl -# --fail --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+- chmod +x /usr/local/bin/rebar3
+- rebar3 --version
+- monkey --update || curl -#fL https://git.io/FuzzyMonkey | BINDIR=/usr/local/bin sh
+- monkey --version
 script:
-  - rebar3 as prod release
-  - if [[ $YML != .fuzzymonkey.yml ]]; then cp $YML .fuzzymonkey.yml; fi
-  - |
-    if [[ $YML == .fuzzymonkey__doc_typo.yml ]]; then
-      sed -i s/consumes:/consume:/ priv/openapi2v1.yml
-    fi
-  - |
-    if [[ $YML == .fuzzymonkey__doc_typo_json.yml ]]; then
-      sed -i 's/"consumes":/"consume":/' priv/openapi2v1.json
-    fi
-  - monkey lint; [[ $? -eq $V ]]
-  - monkey fuzz; [[ $? -eq $T ]]
-  - |
-    if [[ $YML == .fuzzymonkey__start_reset_stop_docker.yml ]]; then
-      [[ 0 -eq $(docker ps -q | wc -l) ]]
-    else
-      ! which docker
-      ! curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items
-    fi
+- rebar3 as prod release
+- cat $YML >fuzzymonkey.star
+- |
+  case $YML in
+    fuzzymonkey__doc_typo.star) sed -i s/consumes:/consume:/ priv/openapi3v1.yml ;;
+    fuzzymonkey__doc_typo_json.star) sed -i 's/"consumes":/"consume":/' priv/openapi3v1.json ;;
+    *) ;;
+  esac
+- monkey lint; [[ $? -eq $V ]]
+- monkey fuzz; [[ $? -eq $T ]]
+- |
+  if [[ $YML == fuzzymonkey__start_reset_stop_docker.star ]]; then
+    [[ 0 -eq $(docker ps -q | wc -l) ]]
+  else
+    ! which docker
+    ! curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items
+  fi
 after_failure:
-  - tail -n 999 /tmp/.monkey_*_*.log
+- tail -n 999 /tmp/.monkey_*_*.log
 after_script:
-  - set +e
+- set +e
 
 matrix:
   include:
-    - env: YML=.fuzzymonkey__start_reset_stop_docker.yml V=0 T=0
-      services: docker
-    - env: YML=.fuzzymonkey__start_reset_stop.yml V=0 T=0
-    - env: YML=.fuzzymonkey__start_reset_stop_json.yml V=0 T=0
-    - env: YML=.fuzzymonkey__start_reset_stop_failing_script.yml V=0 T=7
-    - env: YML=.fuzzymonkey.yml V=0 T=0
-    - env: YML=.fuzzymonkey__env.yml V=0 T=0
-    - env: YML=.fuzzymonkey__doc_typo.yml V=2 T=2
-    - env: YML=.fuzzymonkey__doc_typo_json.yml V=2 T=2
+  - env: YML=fuzzymonkey__start_reset_stop_docker.star V=0 T=0
+    services: docker
+  - env: YML=fuzzymonkey__start_reset_stop.star V=0 T=0
+  - env: YML=fuzzymonkey__start_reset_stop_json.star V=0 T=0
+  - env: YML=fuzzymonkey__start_reset_stop_failing_script.star V=0 T=7
+  - env: YML=fuzzymonkey.star V=0 T=0
+  - env: YML=fuzzymonkey__env.star V=0 T=0
+  - env: YML=fuzzymonkey__doc_typo.star V=2 T=2
+  - env: YML=fuzzymonkey__doc_typo_json.star V=2 T=2
 
 env:
   global:
-    - UA='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:57.0) Gecko/20100101 Firefox/57.0'
-    - R='https://travis-ci.org/FuzzyMonkeyCo/demo_erlang_cowboy_simpleREST'
-    # secure: FUZZYMONKEY_API_KEY=...
-    - secure: KxfD/V81Gn8/B21wNKMQxd27N+75/AjlINfjrA2Tv9wDUPXDYB/tA3gbqGL2yPnKXKHm7x5LsOR4+WMppDofIeY4rAYdaypJPkLgw2p3oKK+oSy4j5fz2xt/PsY2djsPm3w5xUcmfNoX4HhftXzGQSA/8MbqF1jcJCiEOu/8ZNjBCT/HfeGzD7gcYzNSkj/bWsOq00gtYD2aVlYkiJrXdYgzoeTEOvfZ4zJmKW770Jm9YZNFdmEmMuj8H4wqVDvOC9Y89l2GxhSdgcxw6hvRyhKKtz86p1O8bpkhF7rlZJBi/+yGOVc9ZDoHcVSVlmiP26I5Mnlm5J7ZuXj3lCzI7LP/i3TqzwQlEwpEzIj/iLr0X3kTBGxbP11Z4ykZFGiddT2SiFeycn2vSCjyinZOG49ZP8jDwgOJToeT/leut2dzKguGDr+IR0VtIxHTV30JR5kHWparsdgMSELUXbRHvIArVEkeKsQahAUYhU/LHKfxUOWqCZFD7/+TeFDLTWNsdNLl98luItOnRBSHlvbIiJb1xyJCOJCjcYU8X3ScGpqIPcMag0xG137Xd0zgrhCa2hwhTBbF/jpGzWvLtV2vd8Ys8UxaHv5FTlAgUBcWTqXTDqHHGjCfA4+VcSrCX8A/0kk3hsy03O8zBHSAkrREsMgPDYseYUNCMAvf3TnfT3M=
+  # secure: FUZZYMONKEY_API_KEY=...
+  - secure: KxfD/V81Gn8/B21wNKMQxd27N+75/AjlINfjrA2Tv9wDUPXDYB/tA3gbqGL2yPnKXKHm7x5LsOR4+WMppDofIeY4rAYdaypJPkLgw2p3oKK+oSy4j5fz2xt/PsY2djsPm3w5xUcmfNoX4HhftXzGQSA/8MbqF1jcJCiEOu/8ZNjBCT/HfeGzD7gcYzNSkj/bWsOq00gtYD2aVlYkiJrXdYgzoeTEOvfZ4zJmKW770Jm9YZNFdmEmMuj8H4wqVDvOC9Y89l2GxhSdgcxw6hvRyhKKtz86p1O8bpkhF7rlZJBi/+yGOVc9ZDoHcVSVlmiP26I5Mnlm5J7ZuXj3lCzI7LP/i3TqzwQlEwpEzIj/iLr0X3kTBGxbP11Z4ykZFGiddT2SiFeycn2vSCjyinZOG49ZP8jDwgOJToeT/leut2dzKguGDr+IR0VtIxHTV30JR5kHWparsdgMSELUXbRHvIArVEkeKsQahAUYhU/LHKfxUOWqCZFD7/+TeFDLTWNsdNLl98luItOnRBSHlvbIiJb1xyJCOJCjcYU8X3ScGpqIPcMag0xG137Xd0zgrhCa2hwhTBbF/jpGzWvLtV2vd8Ys8UxaHv5FTlAgUBcWTqXTDqHHGjCfA4+VcSrCX8A/0kk3hsy03O8zBHSAkrREsMgPDYseYUNCMAvf3TnfT3M=
 
 notifications:
   email:

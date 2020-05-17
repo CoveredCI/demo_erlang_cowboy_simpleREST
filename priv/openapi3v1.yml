@@ -1,0 +1,234 @@
+openapi: 3.0.0
+info:
+  description: sample REST-like CRUD app APIs
+  license:
+    name: MIT
+  title: sample REST-like CRUD app
+  version: '1'
+servers:
+- url: 'http://cakeci.vcap.me:6773/api/1'
+
+paths:
+  '/item/{id}':
+    delete:
+      description: Deletes a single item based on the ID supplied
+      operationId: deleteItem
+      parameters:
+      - $ref: '#/components/parameters/ItemIDInPath'
+      responses:
+        '204':
+          description: item deleted
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+    get:
+      description: Returns an item based on a single ID
+      operationId: readItem
+      parameters:
+      - $ref: '#/components/parameters/ItemIDInPath'
+      responses:
+        '200':
+          description: item response
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Item'}
+            application/xml:
+              schema: {$ref: '#/components/schemas/Item'}
+            text/xml:
+              schema: {$ref: '#/components/schemas/Item'}
+            text/html:
+              schema: {$ref: '#/components/schemas/Item'}
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+            application/xml:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+            text/xml:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+            text/html:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+    patch:
+      description: Updates an item in the store
+      operationId: updateItem
+      parameters:
+      - $ref: '#/components/parameters/ItemIDInPath'
+      requestBody:
+        $ref: '#/components/requestBodies/NewItem'
+      responses:
+        '200':
+          description: item response
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Item'}
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+    post:
+      description: Replaces an item in the store.
+      operationId: replaceItem
+      parameters:
+      - $ref: '#/components/parameters/ItemIDInPath'
+      requestBody:
+        $ref: '#/components/requestBodies/NewItem'
+      responses:
+        '200':
+          description: item response
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Item'}
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+    put:
+      description: Creates a new item
+      operationId: createItem
+      parameters:
+      - $ref: '#/components/parameters/ItemIDInPath'
+      requestBody:
+        $ref: '#/components/requestBodies/NewItem'
+      responses:
+        '201':
+          description: item response
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Item'}
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+  /items:
+    delete:
+      description: Deletes all items
+      operationId: eraseItems
+      responses:
+        '204':
+          description: items deleted
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+    get:
+      description: List all items
+      operationId: readItems
+      parameters:
+      - description: tags to filter by
+        in: query
+        name: tags
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - description: maximum number of results to return
+        in: query
+        name: limit
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: item response
+          content:
+            application/json:
+              schema:
+                items: {$ref: '#/components/schemas/Item'}
+                type: array
+            application/xml:
+              schema:
+                items: {$ref: '#/components/schemas/Item'}
+                type: array
+            text/xml:
+              schema:
+                items: {$ref: '#/components/schemas/Item'}
+                type: array
+            text/html:
+              schema:
+                items: {$ref: '#/components/schemas/Item'}
+                type: array
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+            application/xml:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+            text/xml:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+            text/html:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+    put:
+      description: Stores a new item
+      operationId: storeItem
+      requestBody:
+        $ref: '#/components/requestBodies/NewItem'
+      responses:
+        '201':
+          description: item response
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Item'}
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorModel'}
+
+components:
+  parameters:
+    ItemIDInPath:
+      in: path
+      name: id
+      required: true
+      schema: {$ref: '#/components/schemas/ItemID'}
+  requestBodies:
+    NewItem:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/NewItem'}
+
+  schemas:
+    ErrorModel:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          format: int32
+          type: integer
+        message:
+          type: string
+    ItemID:
+      format: int64
+      type: integer
+    Item:
+      type: object
+      additionalProperties: false
+      required: [name, id]
+      properties:
+        name: {type: string}
+        id: {type: integer, format: int64}
+        # id: {$ref: '#/components/schemas/ItemID'}
+      # allOf:
+      # - $ref: '#/components/schemas/NewItem'
+      # - required: [id]
+      #   properties:
+      #     id: {$ref: '#/components/schemas/ItemID'}
+    NewItem:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        tag: {type: string}
