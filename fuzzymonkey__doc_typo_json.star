@@ -8,7 +8,7 @@
 OpenAPIv3(
     name = "my simple model",
     # A typo was introduced in documentation in .travis.yml!
-    file = "priv/openapi3v1.yml",
+    file = "priv/openapi3v1.json",
     host = "http://localhost:6773",
     ExecStart = """
 echo Starting...
