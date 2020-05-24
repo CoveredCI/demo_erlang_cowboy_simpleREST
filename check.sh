@@ -1,70 +1,80 @@
-#!/bin/bash -eux
-
-# Bend it like Travis, to debug monkey
+#!/bin/bash -eu
 
 set -o errtrace
 set -o pipefail
 
-declare -a YMLs Vs Ts
+monkey=${MONKEY:-monkey}
+STAR=${STAR:-}
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+# Test like CI but sequentially
+
+declare -a STARs Vs Ts
 declare -i i=0
 
-YMLs[$i]=.fuzzymonkey__start_reset_stop_docker.yml
+STARs[$i]=fuzzymonkey.star
 Vs[$i]=0
 Ts[$i]=0
 ((i+=1)) # Funny Bash thing: ((i++)) returns 1 only when i=0
 
-YMLs[$i]=.fuzzymonkey__start_reset_stop.yml
+STARs[$i]=fuzzymonkey__start_reset_stop_docker.star
 Vs[$i]=0
 Ts[$i]=0
 ((i+=1))
 
-YMLs[$i]=.fuzzymonkey__start_reset_stop_json.yml
+STARs[$i]=fuzzymonkey__start_reset_stop.star
 Vs[$i]=0
 Ts[$i]=0
 ((i+=1))
 
-YMLs[$i]=.fuzzymonkey__start_reset_stop_failing_script.yml
+STARs[$i]=fuzzymonkey__start_reset_stop_json.star
+Vs[$i]=0
+Ts[$i]=0
+((i+=1))
+
+STARs[$i]=fuzzymonkey__start_reset_stop_failing_script.star
 Vs[$i]=0
 Ts[$i]=7
 ((i+=1))
 
-YMLs[$i]=.fuzzymonkey.yml
+STARs[$i]=fuzzymonkey__env.star
 Vs[$i]=0
 Ts[$i]=0
 ((i+=1))
 
-YMLs[$i]=.fuzzymonkey__env.yml
-Vs[$i]=0
-Ts[$i]=0
-((i+=1))
-
-YMLs[$i]=.fuzzymonkey__doc_typo.yml
+STARs[$i]=fuzzymonkey__doc_typo.star
 Vs[$i]=2
 Ts[$i]=2
 ((i+=1))
 
-YMLs[$i]=.fuzzymonkey__doc_typo_json.yml
+STARs[$i]=fuzzymonkey__doc_typo_json.star
 Vs[$i]=2
 Ts[$i]=2
 ((i+=1))
 
 
-monkey=${MONKEY:-monkey}
 $monkey --version
 rebar3 as prod release
-branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 info() {
     printf '\e[1;3m%s\e[0m\n' "$*"
 }
+sed_i() {
+    local expr=$1; shift
+    local file=$1; shift
+    sed "$expr" "$file" >"$file"~
+    mv "$file"~ "$file"
+}
 
 setup() {
-    info $branch $YML V=$V T=$T
-    if [[ $YML != .fuzzymonkey.yml ]]; then cp $YML .fuzzymonkey.yml; fi
-    if [[ $YML == .fuzzymonkey__doc_typo.yml ]]; then
-        sed -i s/consumes:/consume:/ priv/openapi2v1.yml
+    info "$branch" "$STAR" V="$V" T="$T"
+    if [[ $STAR != fuzzymonkey.star ]]; then
+        cat "$STAR" >fuzzymonkey.star
     fi
-    if [[ $YML == .fuzzymonkey__doc_typo_json.yml ]]; then
-        sed -i 's/"consumes":/"consume":/' priv/openapi2v1.json
+    if [[ $STAR = fuzzymonkey__doc_typo.star ]]; then
+        sed_i s/responses:/response:/ priv/openapi3v1.yml
+    fi
+    if [[ $STAR = fuzzymonkey__doc_typo_json.star ]]; then
+        sed_i 's/"responses":/"response":/' priv/openapi3v1.json
     fi
 }
 
@@ -73,51 +83,51 @@ check() {
     $monkey lint; code=$?
     set -e
     if  [[ $code -ne $V ]]; then
-        info $branch $YML V=$V T=$T ...failed
+        info "$branch" "$STAR" V="$V" T="$T" ...failed
         return 1
     fi
     set +e
     $monkey fuzz; code=$?
     set -e
     if  [[ $code -ne $T ]]; then
-        info $branch $YML V=$V T=$T ...failed
+        info "$branch" "$STAR" V="$V" T="$T" ...failed
         return 1
     fi
-    info $branch $YML V=$V T=$T ...passed
+    info "$branch" "$STAR" V="$V" T="$T" ...passed
     return 0
 }
 
 cleanup() {
-    git checkout -- .fuzzymonkey.yml
-    git checkout -- priv/openapi2v1.yml
-    git checkout -- priv/openapi2v1.json
+    git checkout -- fuzzymonkey.star
+    git checkout -- priv/openapi3v1.yml
+    git checkout -- priv/openapi3v1.json
 
-    if docker ps | grep my_image; then
-        docker stop --timeout 0 $(docker ps | grep my_image | awk '{print $1;}')
+    if [[ -n "$failed" ]]; then
+        $monkey logs
     fi
+    $monkey exec stop || true
+
     if curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items; then
-        info Some instance is still running somewhere!
+        info Some instance is still running on localhost!
+        return 1
+    fi
+    if curl --output /dev/null --silent --fail --head http://my_image:6773/api/1/items; then
+        info Some instance is still running on my_image!
         return 1
     fi
 }
 
 errors=0
-YML=${YML:-}
-for i in "${!YMLs[@]}"; do
+for i in "${!STARs[@]}"; do
     V=${Vs[$i]}
     T=${Ts[$i]}
 
-    if [[ -z "$YML" ]]; then
-        YML=${YMLs[$i]} V=$V T=$T setup
-        YML=${YMLs[$i]} V=$V T=$T check || ((errors+=1))
-        YML=${YMLs[$i]} V=$V T=$T cleanup
-    else
-        if [[ $YML = ${YMLs[$i]} ]]; then
-            YML=$YML V=$V T=$T setup
-            YML=$YML V=$V T=$T check || ((errors+=1))
-            YML=$YML V=$V T=$T cleanup
-            break
-        fi
-    fi
+    [[ -n "$STAR" ]] && [[ $STAR != "${STARs[$i]}" ]] && continue
+
+    STAR=${STARs[$i]} V=$V T=$T setup
+    STAR=${STARs[$i]} V=$V T=$T check || { ((errors+=1)); failed=t; }
+    STAR=${STARs[$i]} V=$V T=$T failed=${failed:-} cleanup
+
+    [[ -n "$STAR" ]] && [[ $STAR = "${STARs[$i]}" ]] && break
 done
-exit $errors
+exit "$errors"
