@@ -2,16 +2,12 @@ sudo: false
 language: erlang
 otp_release: 22.0
 
-cache:
-  directories:
-  - ~/.local/bin
-
 before_script:
 - curl -# --fail --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
 - chmod +x /usr/local/bin/rebar3
 - rebar3 --version
-- monkey --update || curl -#fL https://git.io/FuzzyMonkey | BINDIR=/usr/local/bin sh
-- monkey --version
+- monkey update || curl -#fL https://git.io/FuzzyMonkey | BINDIR=/usr/local/bin sh
+- monkey version
 script:
 - rebar3 as prod release
 - cat $YML >fuzzymonkey.star
@@ -31,8 +27,9 @@ script:
     ! curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items
   fi
 after_failure:
-- tail -n 999 /tmp/.monkey_*_*.log
+- monkey logs
 after_script:
+- monkey exec stop || true
 - set +e
 
 matrix:

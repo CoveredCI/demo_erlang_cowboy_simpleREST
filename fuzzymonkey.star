@@ -13,27 +13,26 @@ OpenAPIv3(
     # Also, make sure that each test starts from a clean slate
     #   otherwise results will be unreliable.
     ExecStart = """
-echo starting 1>&2
-until RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample status 1>&2; do
-    RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample start 1>&2
+echo Starting...
+until (RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample status) 1>&2; do
+    (RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample start) 1>&2
     sleep 1
-    echo started? 1>&2
 done
-  """,
+echo Started
+""",
     ExecStop = """
-echo Stopping... 1>&2
-if ! RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample stop 1>&2; then
-    echo Failed to stop 1>&2
-    exit 1
-fi
-echo stopped 1>&2
-    """,
+echo Stopping...
+RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample stop || true
+echo Stopped
+""",
 )
 
+def respondsUnder300ms(State, response):
+    AssertThat(response["elapsed_ns"]).isAtMost(300e6)
 
 TriggerActionAfterProbe(
     name = "Acceptably fast",
     probe = ("monkey", "http", "response"),
     predicate = lambda State, response: True,
-    action = lambda State, response: AssertThat(response['elapsed_ns']).isAtMost(300e6),
+    action = respondsUnder300ms,
 )
