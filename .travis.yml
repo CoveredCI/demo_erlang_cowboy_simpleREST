@@ -3,46 +3,34 @@ language: erlang
 otp_release: 22.0
 
 before_script:
-- curl -# --fail --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
-- chmod +x /usr/local/bin/rebar3
-- rebar3 --version
+- |
+  curl -# --fail --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+  chmod +x /usr/local/bin/rebar3
+  rebar3 --version
 - monkey update || curl -#fL https://git.io/FuzzyMonkey | BINDIR=/usr/local/bin sh
 - monkey version
 script:
-- rebar3 as prod release
-- cat $YML >fuzzymonkey.star
+- ./check.sh
 - |
-  case $YML in
-    fuzzymonkey__doc_typo.star) sed -i s/consumes:/consume:/ priv/openapi3v1.yml ;;
-    fuzzymonkey__doc_typo_json.star) sed -i 's/"consumes":/"consume":/' priv/openapi3v1.json ;;
-    *) ;;
-  esac
-- monkey lint; [[ $? -eq $V ]]
-- monkey fuzz; [[ $? -eq $T ]]
-- |
-  if [[ $YML == fuzzymonkey__start_reset_stop_docker.star ]]; then
+  if command -v docker >/dev/null 2>&1; then
     [[ 0 -eq $(docker ps -q | wc -l) ]]
   else
-    ! which docker
     ! curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items
   fi
-after_failure:
-- monkey logs
 after_script:
-- monkey exec stop || true
 - set +e
 
 matrix:
   include:
-  - env: YML=fuzzymonkey__start_reset_stop_docker.star V=0 T=0
+  - env: STAR=fuzzymonkey__start_reset_stop_docker.star
     services: docker
-  - env: YML=fuzzymonkey__start_reset_stop.star V=0 T=0
-  - env: YML=fuzzymonkey__start_reset_stop_json.star V=0 T=0
-  - env: YML=fuzzymonkey__start_reset_stop_failing_script.star V=0 T=7
-  - env: YML=fuzzymonkey.star V=0 T=0
-  - env: YML=fuzzymonkey__env.star V=0 T=0
-  - env: YML=fuzzymonkey__doc_typo.star V=2 T=2
-  - env: YML=fuzzymonkey__doc_typo_json.star V=2 T=2
+  - env: STAR=fuzzymonkey__start_reset_stop.star
+  - env: STAR=fuzzymonkey__start_reset_stop_json.star
+  - env: STAR=fuzzymonkey__start_reset_stop_failing_script.star
+  - env: STAR=fuzzymonkey.star
+  - env: STAR=fuzzymonkey__env.star
+  - env: STAR=fuzzymonkey__doc_typo.star
+  - env: STAR=fuzzymonkey__doc_typo_json.star
 
 env:
   global:
