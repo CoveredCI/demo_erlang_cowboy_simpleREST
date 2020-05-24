@@ -1,25 +1,42 @@
-version: 0
+# One can either specify
+# * start & stop
+# * start & reset & stop
+# * just reset
 
-documentation:
-  kind: openapi_v2
-  file: priv/openapi2v1.yml
-  host: localhost
-  port: 6773
+OpenAPIv3(
+    name = "my simple model",
+    file = "priv/openapi3v1.yml",
+    host = "http://localhost:6773",
 
-## One can either specify
-## * start & stop
-## * start & reset & stop
-## * just reset
+    # Start
+    ExecStart = """
+echo Starting...
+until (RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample status) 1>&2; do
+    (RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample start) 1>&2
+    sleep 1
+done
+echo Started
+""",
 
-start:
-  - |
-    until RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample status 1>&2; do
-      RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample start 1>&2
-      sleep 1
-    done
+    # Reset
+    ExecReset = """
+curl --fail -X DELETE http://localhost:6773/api/1/items
+""",
 
-reset:
-  - curl --fail -X DELETE http://localhost:6773/api/1/items
+    # Stop
+    ExecStop = """
+echo Stopping...
+RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample stop || true
+echo Stopped $my_host:6773
+""",
+)
 
-stop:
-  - RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample stop 1>&2
+def respondsUnder300ms(State, response):
+    AssertThat(response["elapsed_ns"]).isAtMost(300e6)
+
+TriggerActionAfterProbe(
+    name = "Acceptably fast",
+    probe = ("monkey", "http", "response"),
+    predicate = lambda State, response: True,
+    action = respondsUnder300ms,
+)
