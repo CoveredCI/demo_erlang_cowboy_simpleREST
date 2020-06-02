@@ -16,7 +16,6 @@ script:
 - ./check.sh
 - |
   if command -v docker >/dev/null 2>&1; then
-    docker build --compress --force-rm --tag my_image .
     [[ 0 -eq $(docker ps -q | wc -l) ]]
   else
     ! curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items
