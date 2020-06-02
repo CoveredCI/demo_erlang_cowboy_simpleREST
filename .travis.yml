@@ -1,4 +1,3 @@
-sudo: false
 language: erlang
 otp_release: 22.0
 
@@ -7,12 +6,17 @@ before_script:
   curl -# --fail --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
   chmod +x /usr/local/bin/rebar3
   rebar3 --version
-- monkey update || curl -#fL https://git.io/FuzzyMonkey | BINDIR=/usr/local/bin sh
-- monkey version
+- |
+  echo $PATH
+  while read -d: -r path; do ls -lhd $path || echo $path; done <<<"$PATH"
+- |
+  monkey update || curl -#fL https://git.io/FuzzyMonkey | BINDIR=/home/travis/bin sh
+  monkey version
 script:
 - ./check.sh
 - |
   if command -v docker >/dev/null 2>&1; then
+    docker build --compress --force-rm --tag my_image .
     [[ 0 -eq $(docker ps -q | wc -l) ]]
   else
     ! curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items
@@ -22,12 +26,12 @@ after_script:
 
 matrix:
   include:
+  - env: STAR=fuzzymonkey.star
   - env: STAR=fuzzymonkey__start_reset_stop_docker.star
     services: docker
   - env: STAR=fuzzymonkey__start_reset_stop.star
   - env: STAR=fuzzymonkey__start_reset_stop_json.star
   - env: STAR=fuzzymonkey__start_reset_stop_failing_script.star
-  - env: STAR=fuzzymonkey.star
   - env: STAR=fuzzymonkey__env.star
   - env: STAR=fuzzymonkey__doc_typo.star
   - env: STAR=fuzzymonkey__doc_typo_json.star
@@ -35,7 +39,7 @@ matrix:
 env:
   global:
   # secure: FUZZYMONKEY_API_KEY=...
-  - secure: KxfD/V81Gn8/B21wNKMQxd27N+75/AjlINfjrA2Tv9wDUPXDYB/tA3gbqGL2yPnKXKHm7x5LsOR4+WMppDofIeY4rAYdaypJPkLgw2p3oKK+oSy4j5fz2xt/PsY2djsPm3w5xUcmfNoX4HhftXzGQSA/8MbqF1jcJCiEOu/8ZNjBCT/HfeGzD7gcYzNSkj/bWsOq00gtYD2aVlYkiJrXdYgzoeTEOvfZ4zJmKW770Jm9YZNFdmEmMuj8H4wqVDvOC9Y89l2GxhSdgcxw6hvRyhKKtz86p1O8bpkhF7rlZJBi/+yGOVc9ZDoHcVSVlmiP26I5Mnlm5J7ZuXj3lCzI7LP/i3TqzwQlEwpEzIj/iLr0X3kTBGxbP11Z4ykZFGiddT2SiFeycn2vSCjyinZOG49ZP8jDwgOJToeT/leut2dzKguGDr+IR0VtIxHTV30JR5kHWparsdgMSELUXbRHvIArVEkeKsQahAUYhU/LHKfxUOWqCZFD7/+TeFDLTWNsdNLl98luItOnRBSHlvbIiJb1xyJCOJCjcYU8X3ScGpqIPcMag0xG137Xd0zgrhCa2hwhTBbF/jpGzWvLtV2vd8Ys8UxaHv5FTlAgUBcWTqXTDqHHGjCfA4+VcSrCX8A/0kk3hsy03O8zBHSAkrREsMgPDYseYUNCMAvf3TnfT3M=
+  - secure: "Q5AarRiWY0Qlpsx8y2gMSVzYWQLAlg6cd+3Gw+q3lBh+M+E2hceRJd3WkxA3VcPUbHGoaj5OsNmFn6Mc7yCfvu7ErtF/2jiINabdsWybnuTlcKKAOkbj2LJNjwPDN/fxiheDIRfup3C59qgclFJAN3BV+Wg7xHamUxRdHT5e8NT2vzzaKfY3vwEZncrr2Hqcl1mPBbpOnjxEmXzm4YUMOZwQZIAf4JtLE4zLPdtWFvZJJiCGLsEB3doaUad2sz1pL7JpXlk15CeDb2WebqtxGKeJ7MpVMBF28nBZSUpf+Na0CaCLRPaWBw5f1TKTD9s3zzKvKGc4edm0uBgWWZ7ptyPBjj0D4O1zsVN/h4rC/E0FCDszBcQF3Zkk3AwLVw6AaKU+SO7gO2HxcW0uPOglX0f6anQmwoR7/+2DUdHX6boP169EB2QydYlJJWjOczIRHEqLtLjZwSt2rdlWdoYmQCL4pDrLPYxd4A08JsLy+UQsW2BrpP6sHwwj8ypo+FXfYoSsBchJ0PdCbySX7TbN7a6Idh4f9mmmwCUa1y//bZW3+UfAFy8dx2mqUeCaPP1u5a02juIp/7IWkp6UEhwBWyhGiOeHjBsKBFCGcNBvn0TYrYTPgAV66CnQOlO3MrSxCgsU2/9c9XpooXE+8/z3KaP47VQJvrODlMmp/3FiWts="
 
 notifications:
   email:
