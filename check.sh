@@ -98,10 +98,6 @@ check() {
 }
 
 cleanup() {
-    git checkout -- fuzzymonkey.star
-    git checkout -- priv/openapi3v1.yml
-    git checkout -- priv/openapi3v1.json
-
     if [[ -n "$failed" ]]; then
         $monkey logs
     fi
@@ -115,6 +111,10 @@ cleanup() {
         info Some instance is still running on my_image!
         return 1
     fi
+
+    git checkout -- fuzzymonkey.star
+    git checkout -- priv/openapi3v1.yml
+    git checkout -- priv/openapi3v1.json
 }
 
 errors=0

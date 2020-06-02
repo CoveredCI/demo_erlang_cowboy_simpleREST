@@ -6,6 +6,8 @@ OpenAPIv3(
     name = "my simple model",
     file = "priv/openapi3v1.json",
     host = "http://localhost:6773",
+
+    # Start
     ExecStart = """
 echo Starting...
 until (RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample status) 1>&2; do
@@ -14,9 +16,13 @@ until (RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample status) 1>&
 done
 echo Started
 """,
+
+    # Reset
     ExecReset = """
 curl --fail -X DELETE http://localhost:6773/api/1/items
 """,
+
+    # Stop
     ExecStop = """
 echo Stopping...
 RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample stop || true

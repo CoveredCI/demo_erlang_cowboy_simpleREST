@@ -1,4 +1,4 @@
-FROM erlang:21-alpine
+FROM erlang:22-alpine
 
 WORKDIR /opt/app
 COPY . $PWD
