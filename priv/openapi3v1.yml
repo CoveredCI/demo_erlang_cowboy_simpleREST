@@ -52,8 +52,8 @@ paths:
             text/html:
               schema: {$ref: '#/components/schemas/ErrorModel'}
     patch:
-      description: Updates an item in the store
-      operationId: updateItem
+      description: Updates (merges) an item in the store
+      operationId: mergeItem
       parameters:
       - $ref: '#/components/parameters/ItemIDInPath'
       requestBody:

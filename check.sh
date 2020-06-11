@@ -87,7 +87,7 @@ check() {
         return 1
     fi
     set +e
-    $monkey fuzz; code=$?
+    $monkey fuzz --intensity=999; code=$? #FIXME: drop '--intensity=999'
     set -e
     if  [[ $code -ne $T ]]; then
         info "$branch" "$STAR" V="$V" T="$T" ...failed
