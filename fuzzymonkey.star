@@ -1,4 +1,7 @@
-# Data describing Web APIs
+# An example configuration file for fuzzymonkey.co's `monkey`.
+
+## A spec describing Web APIs in the OpenAPIv3 format
+
 OpenAPIv3(
     name = "my simple model",
     # Note: references to schemas in `file` are resolved relative to file's location.
@@ -27,6 +30,8 @@ echo Stopped
 """,
 )
 
+## A simple check that runs after every HTTP call
+
 def respondsUnder300ms(State, response):
     AssertThat(response["elapsed_ns"]).isAtMost(300e6)
 
@@ -36,6 +41,8 @@ TriggerActionAfterProbe(
     predicate = lambda State, response: True,
     action = respondsUnder300ms,
 )
+
+## A stateful model checking our CRUD Web app
 
 State = {
     "items": {},  # map of ItemID (str) to Item (dict)
