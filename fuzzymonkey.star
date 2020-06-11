@@ -11,10 +11,12 @@ OpenAPIv3(
     # Note: commands are executed in shells sharing the same environment variables,
     # with `set -e` and `set -o pipefail` flags on.
 
-    # The following get executed once per test
+    # The following gets executed once per test
     #   so have these commands complete as fast as possible.
     # Also, make sure that each test starts from a clean slate
     #   otherwise results will be unreliable.
+
+    # Start
     ExecStart = """
 echo Starting...
 until (RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample status) 1>&2; do
@@ -23,6 +25,8 @@ until (RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample status) 1>&
 done
 echo Started
 """,
+
+    # Stop
     ExecStop = """
 echo Stopping...
 RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample stop || true
