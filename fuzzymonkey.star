@@ -116,7 +116,7 @@ TriggerActionAfterProbe(
 )
 
 def check_item_was_merged(State, response):
-    print("Replacing item #{}".format(item_id(response)))
+    print("Updating item #{}".format(item_id(response)))
     print("  with: {}".format(response["request"]["json"]))
     merged = response["json"]
     merged.pop("id")  # PATCH /item/{itemID} returns the ID in the body
