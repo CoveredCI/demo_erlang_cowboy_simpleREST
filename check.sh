@@ -5,6 +5,7 @@ set -o pipefail
 
 monkey=${MONKEY:-monkey}
 STAR=${STAR:-}
+TIMEOUT=${TIMEOUT:-30s}
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
 # Test like CI but sequentially
@@ -86,8 +87,13 @@ check() {
         info "$branch" "$STAR" "V=$V (got $code)" T="$T" ...failed
         return 1
     fi
+    timeout=$TIMEOUT
+    if [[ $T -ne 0 ]]; then
+        # TODO: bring this down
+        timeout=30m
+    fi
     set +e
-    $monkey fuzz --intensity=999 --time-budget=5m; code=$? #FIXME: drop '--intensity=999'
+    $monkey fuzz --intensity=999 --time-budget=$timeout; code=$? #FIXME: drop '--intensity=999'
     set -e
     if  [[ $code -ne $T ]]; then
         info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
