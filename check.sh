@@ -106,9 +106,9 @@ check() {
 cleanup() {
     if [[ -n "$failed" ]]; then
         if [[ -n "$CI" ]]; then
-            $monkey logs | head
-            echo '---'
             $monkey logs | tail -n999
+            echo '---'
+            $monkey logs | head
         fi
     fi
     $monkey exec stop || true
