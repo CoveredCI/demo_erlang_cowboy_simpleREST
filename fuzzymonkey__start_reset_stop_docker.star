@@ -22,7 +22,7 @@ done
 
     # Reset
     ExecReset = """
-curl --fail -X DELETE http://localhost:6773/api/1/items
+curl --fail -# -X DELETE http://localhost:6773/api/1/items
 """,
 
     # Stop
