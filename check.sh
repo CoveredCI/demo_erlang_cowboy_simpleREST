@@ -3,7 +3,8 @@
 set -o errtrace
 set -o pipefail
 
-monkey=${MONKEY:-monkey}
+MONKEY=${MONKEY:-monkey}
+VVV=${VVV:-}
 STAR=${STAR:-}
 TIMEOUT=${TIMEOUT:-30s}
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
@@ -54,7 +55,7 @@ Ts[$i]=2
 ((i+=1))
 
 
-$monkey --version
+$MONKEY --version
 rebar3 as prod release
 info() {
     printf '\e[1;3m%s\e[0m\n' "$*"
@@ -81,7 +82,7 @@ setup() {
 
 check() {
     set +e
-    $monkey lint; code=$?
+    $MONKEY $VVV lint; code=$?
     set -e
     if  [[ $code -ne $V ]]; then
         info "$branch" "$STAR" "V=$V (got $code)" T="$T" ...failed
@@ -93,7 +94,7 @@ check() {
         timeout=30m
     fi
     set +e
-    $monkey fuzz --intensity=999 --time-budget=$timeout; code=$? #FIXME: drop '--intensity=999'
+    $MONKEY $VVV fuzz --intensity=999 --time-budget=$timeout; code=$? #FIXME: drop '--intensity=999'
     set -e
     if  [[ $code -ne $T ]]; then
         info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
@@ -105,13 +106,13 @@ check() {
 
 cleanup() {
     if [[ -n "$failed" ]]; then
-        if [[ -n "$CI" ]]; then
-            $monkey logs | tail -n999
+        if [[ -n "${CI:-}" ]]; then
+            $MONKEY logs | tail -n999
             echo '---'
-            $monkey logs | head
+            $MONKEY logs | head
         fi
     fi
-    $monkey exec stop || true
+    $MONKEY exec stop || true
 
     if curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items; then
         info Some instance is still running on localhost!
