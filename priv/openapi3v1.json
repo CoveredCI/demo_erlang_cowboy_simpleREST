@@ -1,353 +1,4 @@
 {
-  "openapi": "3.0.0",
-  "info": {
-    "description": "sample REST-like CRUD app APIs",
-    "license": {
-      "name": "MIT"
-    },
-    "title": "sample REST-like CRUD app",
-    "version": "1"
-  },
-  "paths": {
-    "/item/{id}": {
-      "delete": {
-        "description": "Deletes a single item based on the ID supplied",
-        "operationId": "deleteItem",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ItemIDInPath"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "item deleted"
-          },
-          "default": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "description": "Returns an item based on a single ID",
-        "operationId": "readItem",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ItemIDInPath"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "item response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              },
-              "text/html": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              },
-              "text/html": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "description": "Updates an item in the store",
-        "operationId": "updateItem",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ItemIDInPath"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "item response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "$ref": "#/components/requestBodies/NewItem"
-        }
-      },
-      "post": {
-        "description": "Replaces an item in the store.",
-        "operationId": "replaceItem",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ItemIDInPath"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "item response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "$ref": "#/components/requestBodies/NewItem"
-        }
-      },
-      "put": {
-        "description": "Creates a new item",
-        "operationId": "createItem",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ItemIDInPath"
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "item response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "$ref": "#/components/requestBodies/NewItem"
-        }
-      }
-    },
-    "/items": {
-      "delete": {
-        "description": "Deletes all items",
-        "operationId": "eraseItems",
-        "responses": {
-          "204": {
-            "description": "items deleted"
-          },
-          "default": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "description": "List all items",
-        "operationId": "readItems",
-        "parameters": [
-          {
-            "description": "tags to filter by",
-            "in": "query",
-            "name": "tags",
-            "required": false,
-            "style": "form",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          {
-            "description": "maximum number of results to return",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "item response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Item"
-                  },
-                  "type": "array"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Item"
-                  },
-                  "type": "array"
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Item"
-                  },
-                  "type": "array"
-                }
-              },
-              "text/html": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Item"
-                  },
-                  "type": "array"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              },
-              "text/html": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "description": "Stores a new item",
-        "operationId": "storeItem",
-        "responses": {
-          "201": {
-            "description": "item response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "$ref": "#/components/requestBodies/NewItem"
-        }
-      }
-    }
-  },
-  "servers": [
-    {
-      "url": "http://cakeci.vcap.me:6773/api/1"
-    }
-  ],
   "components": {
     "parameters": {
       "ItemIDInPath": {
@@ -355,8 +6,7 @@
         "name": "id",
         "required": true,
         "schema": {
-          "type": "integer",
-          "format": "int64"
+          "$ref": "#/components/schemas/ItemID"
         }
       }
     },
@@ -390,23 +40,25 @@
         "type": "object"
       },
       "Item": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/NewItem"
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
           },
-          {
-            "properties": {
-              "id": {
-                "format": "int64",
-                "type": "integer"
-              }
-            },
-            "required": [
-              "id"
-            ]
+          "name": {
+            "type": "string"
           }
+        },
+        "required": [
+          "name",
+          "id"
         ],
         "type": "object"
+      },
+      "ItemID": {
+        "format": "int64",
+        "type": "integer"
       },
       "NewItem": {
         "properties": {
@@ -423,5 +75,354 @@
         "type": "object"
       }
     }
-  }
+  },
+  "info": {
+    "description": "sample REST-like CRUD app APIs",
+    "license": {
+      "name": "MIT"
+    },
+    "title": "sample REST-like CRUD app",
+    "version": "1"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/item/{id}": {
+      "delete": {
+        "description": "Deletes a single item based on the ID supplied",
+        "operationId": "deleteItem",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ItemIDInPath"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      },
+      "get": {
+        "description": "Returns an item based on a single ID",
+        "operationId": "readItem",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ItemIDInPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            },
+            "description": "item response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      },
+      "patch": {
+        "description": "Updates (merges) an item in the store",
+        "operationId": "mergeItem",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ItemIDInPath"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/NewItem"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            },
+            "description": "item response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      },
+      "post": {
+        "description": "Replaces an item in the store.",
+        "operationId": "replaceItem",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ItemIDInPath"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/NewItem"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            },
+            "description": "item response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      },
+      "put": {
+        "description": "Creates a new item",
+        "operationId": "createItem",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ItemIDInPath"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/NewItem"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            },
+            "description": "item response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      }
+    },
+    "/items": {
+      "delete": {
+        "description": "Deletes all items",
+        "operationId": "eraseItems",
+        "responses": {
+          "204": {
+            "description": "items deleted"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      },
+      "get": {
+        "description": "List all items",
+        "operationId": "readItems",
+        "parameters": [
+          {
+            "description": "tags to filter by",
+            "explode": false,
+            "in": "query",
+            "name": "tags",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "maximum number of results to return",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Item"
+                  },
+                  "type": "array"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Item"
+                  },
+                  "type": "array"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Item"
+                  },
+                  "type": "array"
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Item"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "item response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      },
+      "put": {
+        "description": "Stores a new item",
+        "operationId": "storeItem",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/NewItem"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            },
+            "description": "item response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "unexpected error"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://cakeci.vcap.me:6773/api/1"
+    }
+  ]
 }
