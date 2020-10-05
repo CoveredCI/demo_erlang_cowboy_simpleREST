@@ -89,6 +89,9 @@ check() {
         return 1
     fi
     timeout=$TIMEOUT
+    if [[ $T -ne 0 ]]; then
+        timeout=30m # TODO: bring this down
+    fi
     set +e
     $MONKEY $VVV fuzz --intensity=999 --time-budget=$timeout; code=$? #FIXME: drop '--intensity=999'
     set -e
