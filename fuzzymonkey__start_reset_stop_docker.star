@@ -116,17 +116,16 @@ TriggerActionAfterProbe(
 # Note: you can ensure your assertions work as you intend
 #
 # This passes (which can be surprising):
-AssertThat({"name": "Mr. Buggybug"}).containsAllIn({"name": "ipsa"})
-# This doesn't:
-# AssertThat({"name": "Mr. Buggybug"}).containsExactlyElementsIn({"name": "ipsa"})
-# AssertThat({"name": "Mr. Buggybug"}).containsExactlyItemsIn({"name": "ipsa"})
+AssertThat({"my": "value"}).containsAllIn({"my": 42})
 
 def check_item_was_merged(_State, response):
+    patch = response["request"]["json"]
     print("Updating item #{}".format(item_id(response)))
-    print("  with: {}".format(response["request"]["json"]))
+    print("  with: {}".format(patch))
     merged = response["json"]
     merged.pop("id")  # PATCH /item/{itemID} returns the ID in the body
-    AssertThat(merged).containsExactlyElementsIn(response["request"]["json"])
+    for key, value in patch.items():
+        AssertThat(merged).containsItem(key, value)
 
 TriggerActionAfterProbe(
     name = "Ensure an item gets merged correctly",
