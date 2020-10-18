@@ -10,7 +10,7 @@ before_script:
   echo $PATH
   while read -d: -r path; do ls -lhd $path || echo $path; done <<<"$PATH"
 - |
-  monkey update || curl -#fL https://git.io/FuzzyMonkey | BINDIR=/home/travis/bin sh
+  curl -#fL https://git.io/FuzzyMonkey | BINDIR=/home/travis/bin sh
   monkey version
 script:
 - ./check.sh
