@@ -31,7 +31,7 @@ curl --fail -# -X DELETE http://localhost:6773/api/1/items
     ExecStop = """
 echo Stopping...
 RELX_REPLACE_OS_VARS=true ./_build/prod/rel/sample/bin/sample stop || true
-echo Stopped $my_host:6773
+echo Stopped localhost:6773
 """,
 )
 
