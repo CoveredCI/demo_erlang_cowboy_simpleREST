@@ -56,6 +56,7 @@ Ts[$i]=2
 
 
 $MONKEY --version
+rebar3 clean --all
 rebar3 as prod release
 info() {
     printf '\e[1;3m%s\e[0m\n' "$*"

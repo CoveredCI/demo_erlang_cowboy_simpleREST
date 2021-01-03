@@ -1,6 +1,8 @@
 -module(sample_rest_handler).
 -behaviour(cowboy_handler).
 
+-include_lib("kernel/include/logger.hrl").
+
 %% Standard callbacks.
 -export([init/2]).
 -export([allowed_methods/2]).
@@ -60,21 +62,21 @@ id(Req) ->
 
 'C'(Req, State) ->
     {ok, ItemBin, Req2} = cowboy_req:read_body(Req),
-    lager:debug("received body: ~p", [ItemBin]),
+    ?LOG_DEBUG("received body: ~p", [ItemBin]),
     Item = jsx:decode(ItemBin, [return_maps]),
-    lager:debug("decoded JSON: ~s", [jsx:encode(Item)]),
+    ?LOG_DEBUG("decoded JSON: ~s", [jsx:encode(Item)]),
     case cowboy_req:method(Req2) of
         <<"POST">> ->
             ItemId = id(Req2),
             Rep = sample_crud_store:update(ItemId, Item),
             Req3 = cowboy_req:set_resp_body(jsx:encode(Rep), Req2),
-            lager:debug("POST ~p", [ItemId]),
+            ?LOG_DEBUG("POST ~p", [ItemId]),
             {true, Req3, State};
         <<"PATCH">> ->
             ItemId = id(Req2),
             Rep = sample_crud_store:patch(ItemId, Item),
             Req3 = cowboy_req:set_resp_body(jsx:encode(Rep), Req2),
-            lager:debug("PATCH ~p", [ItemId]),
+            ?LOG_DEBUG("PATCH ~p", [ItemId]),
             {true, Req3, State};
         <<"PUT">> ->
             case id(Req2) of
@@ -83,13 +85,13 @@ id(Req) ->
                     Req3 = cowboy_req:set_resp_header(<<"location">>, ?ITEM(ItemId), Req2),
                     Req4 = cowboy_req:set_resp_body(jsx:encode(Rep), Req3),
                     Req5 = cowboy_req:reply(201, Req4),
-                    lager:debug("PUT"),
+                    ?LOG_DEBUG("PUT"),
                     {stop, Req5, State};
                 ItemId ->
                     Rep = sample_crud_store:put(ItemId, Item),
                     Req3 = cowboy_req:set_resp_body(jsx:encode(Rep), Req2),
                     Req4 = cowboy_req:reply(201, Req3),
-                    lager:debug("PUT ~p", [ItemId]),
+                    ?LOG_DEBUG("PUT ~p", [ItemId]),
                     {stop, Req4, State}
             end
     end.
@@ -97,10 +99,10 @@ id(Req) ->
 'R'(Req, ItemId) ->
     Item = case index =:= ItemId of
                true ->
-                   lager:debug("GET"),
+                   ?LOG_DEBUG("GET"),
                    sample_crud_store:get();
                false ->
-                   lager:debug("GET ~p", [ItemId]),
+                   ?LOG_DEBUG("GET ~p", [ItemId]),
                    sample_crud_store:get(ItemId)
            end,
     {jsx:encode(Item), Req, ItemId}.
@@ -115,11 +117,11 @@ delete_resource(Req, State) ->
 delete_completed(Req0, State) ->
     case id(Req0) of
         undefined ->
-            lager:debug("DELETE"),
+            ?LOG_DEBUG("DELETE"),
             sample_crud_store:erase(),
             {true, Req0, State};
         ItemId ->
-            lager:debug("DELETE ~p", [ItemId]),
+            ?LOG_DEBUG("DELETE ~p", [ItemId]),
             _Item = sample_crud_store:delete(ItemId),
             {not sample_crud_store:exists(ItemId), Req0, State}
     end.
