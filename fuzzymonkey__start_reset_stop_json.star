@@ -64,7 +64,8 @@ TriggerActionAfterProbe(
 )
 
 def compare_all(State, items):
-    [AssertThat(item).isIn(items) for itemID, item in State["items"].items()]
+    for item_id, item in State["items"].items():
+        AssertThat(item).isIn(items)
 
 TriggerActionAfterProbe(
     name = "Compare items seen with remote data",
@@ -104,9 +105,9 @@ TriggerActionAfterProbe(
 
 def add_new_item(State, response):
     item = response["json"]
-    itemID = str(item["id"])
-    AssertThat(State["items"]).doesNotContainKey(itemID)
-    State["items"][itemID] = item
+    item_id = str(item["id"])
+    AssertThat(State["items"]).doesNotContainKey(item_id)
+    State["items"][item_id] = item
 
 TriggerActionAfterProbe(
     name = "Add a new item to model state",
@@ -122,11 +123,12 @@ TriggerActionAfterProbe(
 AssertThat({"my": "value"}).containsAllIn({"my": 42})
 
 def check_item_was_merged(_State, response):
+    """Ensures all pairs in request payload appear in response body"""
     patch = response["request"]["json"]
     print("Updating item #{}".format(item_id(response)))
     print("  with: {}".format(patch))
     merged = response["json"]
-    merged.pop("id")  # PATCH /item/{itemID} returns the ID in the body
+    merged.pop("id")  # PATCH /item/{item_id} returns the ID in the body
     for key, value in patch.items():
         AssertThat(merged).containsItem(key, value)
 
@@ -138,13 +140,17 @@ TriggerActionAfterProbe(
 )
 
 def replace_existing_item(State, response):
+    """
+    Adds or replaces an item in our model's state.
+    """
     item = response["json"]
-    itemID = str(item["id"])
+    item_id = str(item["id"])
     if len(State["items"]) != 0:
-        # If we have an idea of which items the server contains
-        # we can make sure we the item being updated already existed
-        AssertThat(State["items"]).containsKey(itemID)
-    State["items"][itemID] = item
+        # Our model already knows the items (a previous GET HTTP request
+        #   must have populated State["items"]).
+        # Then we can make sure the item being updated is in there.
+        AssertThat(State["items"]).containsKey(item_id)
+    State["items"][item_id] = item
 
 TriggerActionAfterProbe(
     name = "Updates an item in model state",
