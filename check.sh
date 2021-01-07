@@ -82,6 +82,7 @@ setup() {
 }
 
 check() {
+    $MONKEY $VVV fmt
     set +e
     $MONKEY $VVV lint; code=$?
     set -e
