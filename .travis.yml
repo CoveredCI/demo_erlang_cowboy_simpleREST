@@ -13,6 +13,10 @@ before_script:
   monkey update || curl -#fL https://git.io/FuzzyMonkey | BINDIR=/home/travis/bin sh -x
   monkey version
 script:
+- |
+  if command -v docker >/dev/null 2>&1; then
+    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  fi
 - ./check.sh
 - |
   if command -v docker >/dev/null 2>&1; then
