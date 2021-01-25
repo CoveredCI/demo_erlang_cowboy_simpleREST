@@ -82,7 +82,14 @@ setup() {
 }
 
 check() {
-    $MONKEY $VVV fmt
+    set +e
+    $MONKEY $VVV fmt; code=$?
+    set -e
+    if  [[ $code -ne 0 ]]; then
+        info "$branch" "$STAR" "F=0 (got $code)" ...failed
+        return 1
+    fi
+
     set +e
     $MONKEY $VVV lint; code=$?
     set -e
@@ -90,17 +97,41 @@ check() {
         info "$branch" "$STAR" "V=$V (got $code)" T="$T" ...failed
         return 1
     fi
+
     timeout=$TIMEOUT
     if [[ $T -ne 0 ]]; then
         timeout=30m # TODO: bring this down
     fi
+    intensity=999 # TODO: drop --intensity
+
     set +e
-    $MONKEY $VVV fuzz --intensity=999 --time-budget=$timeout; code=$? #FIXME: drop '--intensity=999'
+    $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --no-shrinking; code=$?
     set -e
     if  [[ $code -ne $T ]]; then
         info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
         return 1
     fi
+
+    seed=''; seedfile=$(mktemp)
+    set +e
+    $MONKEY pastseed >"$seedfile" 2>&1; code=$?
+    set -e
+    seed=$(cat "$seedfile")
+    rm "$seedfile"
+    if [[ $code -ne 0 ]] || [[ -z "$seed" ]]; then
+        info "$branch" "$STAR" V="$V" "S=0 (got $code)" ...failed
+        echo "$seedfile"
+        echo "$seed"
+        return 1
+    fi
+    set +e
+    $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --seed=$seed; code=$?
+    set -e
+    if  [[ $code -ne $T ]]; then
+        info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
+        return 1
+    fi
+
     info "$branch" "$STAR" V="$V" T="$T" ...passed
     return 0
 }
@@ -113,7 +144,6 @@ cleanup() {
             $MONKEY logs | head
         fi
     fi
-    $MONKEY exec stop || true
 
     if curl --output /dev/null --silent --fail --head http://localhost:6773/api/1/items; then
         info Some instance is still running on localhost!

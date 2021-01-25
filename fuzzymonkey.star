@@ -52,6 +52,11 @@ State = {
     "items": {},  # map of ItemID (str) to Item (dict)
 }
 
+# Return State in order to commit its changes:
+def remove_all_items(State, _response):
+    State["items"].clear()
+    return State
+
 TriggerActionAfterProbe(
     name = "Remove all items from model state",
     probe = ("monkey", "http", "response"),
@@ -60,7 +65,7 @@ TriggerActionAfterProbe(
         "/items" in response["request"]["url"],
         response["status_code"] == 204,
     ]),
-    action = lambda State, response: State["items"].clear(),
+    action = remove_all_items,
 )
 
 def compare_all(State, items):
@@ -75,7 +80,7 @@ TriggerActionAfterProbe(
         "/items" in response["request"]["url"],
         response["status_code"] == 200,
     ]),
-    action = lambda State, response: compare_all(State, response["json"]),
+    action = lambda State, response: compare_all(State, response["body"]),
 )
 
 def match_only(method, path, status):
@@ -87,30 +92,37 @@ def match_only(method, path, status):
 
 def item_id(response):
     start = response["request"]["url"].index("/item/")
-    return response["request"]["url"][start + len("/item/"):]
+    return str(int(response["request"]["url"][start + len("/item/"):]))
+
+def remove_single_item(State, response):
+    State["items"].pop(item_id(response), None)
+    return State
 
 TriggerActionAfterProbe(
     name = "Remove item from model state",
     probe = ("monkey", "http", "response"),
     predicate = match_only("DELETE", "/item/", 204),
-    action = lambda State, response: State["items"].pop(item_id(response), None),
+    action = remove_single_item,
 )
 
 TriggerActionAfterProbe(
     name = "Check reading an item matches model state",
     probe = ("monkey", "http", "response"),
     predicate = match_only("GET", "/item/", 200),
-    action = lambda S, resp: compare_all(S, [resp["json"]]),
+    action = lambda S, resp: compare_all(S, [resp["body"]]),
 )
 
 def add_new_item(State, response):
-    item = response["json"]
-    item_id = str(item["id"])
-    AssertThat(State["items"]).doesNotContainKey(item_id)
+    """Adds a single new item to State"""
+    item = response["body"]
+    item_id = str(int(item["id"]))
+    if item_id in State["items"]:
+        return replace_existing_item(State, response)
     State["items"][item_id] = item
+    return State
 
 TriggerActionAfterProbe(
-    name = "Add a new item to model state",
+    name = "Add/update a single item in model state",
     probe = ("monkey", "http", "response"),
     predicate = match_only("PUT", "/item/", 201),
     action = add_new_item,
@@ -124,10 +136,10 @@ AssertThat({"my": "value"}).containsAllIn({"my": 42})
 
 def check_item_was_merged(_State, response):
     """Ensures all pairs in request payload appear in response body"""
-    patch = response["request"]["json"]
+    patch = response["request"]["body"]
     print("Updating item #{}".format(item_id(response)))
     print("  with: {}".format(patch))
-    merged = response["json"]
+    merged = response["body"]
     merged.pop("id")  # PATCH /item/{item_id} returns the ID in the body
     for key, value in patch.items():
         AssertThat(merged).containsItem(key, value)
@@ -143,14 +155,15 @@ def replace_existing_item(State, response):
     """
     Adds or replaces an item in our model's state.
     """
-    item = response["json"]
-    item_id = str(item["id"])
+    item = response["body"]
+    item_id = str(int(item["id"]))
     if len(State["items"]) != 0:
         # Our model already knows the items (a previous GET HTTP request
         #   must have populated State["items"]).
         # Then we can make sure the item being updated is in there.
         AssertThat(State["items"]).containsKey(item_id)
     State["items"][item_id] = item
+    return State
 
 TriggerActionAfterProbe(
     name = "Updates an item in model state",

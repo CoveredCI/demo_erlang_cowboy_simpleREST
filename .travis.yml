@@ -1,7 +1,12 @@
 language: erlang
 otp_release: 22.0
 
+git: {depth: false}
+
 before_script:
+- |
+  git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+  git fetch --prune --unshallow --tags
 - |
   curl -# --fail --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
   chmod +x /usr/local/bin/rebar3
