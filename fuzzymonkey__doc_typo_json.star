@@ -11,7 +11,7 @@
 
 OpenAPIv3(
     name = "my simple model",
-    # A typo was introduced in documentation in .travis.yml!
+    # A typo was introduced in the documentation!
     file = "priv/openapi3v1.json",
     host = "http://localhost:6773",
 
