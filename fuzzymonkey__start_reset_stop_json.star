@@ -105,27 +105,35 @@ TriggerActionAfterProbe(
     action = remove_single_item,
 )
 
+def ensure_matching_contents_if_model_knows_about_item(S, response):
+    item = response["body"]
+    item_id = str(int(item["id"]))
+    if item_id in S["items"]:
+        AssertThat(S["items"][item_id]).isEqualTo(item)
+
 TriggerActionAfterProbe(
     name = "Check reading an item matches model state",
     probe = ("monkey", "http", "response"),
     predicate = match_only("GET", "/item/", 200),
-    action = lambda S, resp: compare_all(S, [resp["body"]]),
+    action = ensure_matching_contents_if_model_knows_about_item,
 )
 
-def add_new_item(State, response):
-    """Adds a single new item to State"""
+def add_item(State, response):
+    """Adds or updates a single item in State"""
     item = response["body"]
     item_id = str(int(item["id"]))
-    if item_id in State["items"]:
-        return replace_existing_item(State, response)
     State["items"][item_id] = item
     return State
 
 TriggerActionAfterProbe(
     name = "Add/update a single item in model state",
     probe = ("monkey", "http", "response"),
-    predicate = match_only("PUT", "/item/", 201),
-    action = add_new_item,
+    predicate = lambda State, response: any([
+        match_only("PUT", "/item/", 201)(State, response),
+        match_only("POST", "/item/", 200)(State, response),
+        match_only("PATCH", "/item/", 200)(State, response),
+    ]),
+    action = add_item,
 )
 
 #
@@ -149,25 +157,4 @@ TriggerActionAfterProbe(
     probe = ("monkey", "http", "response"),
     predicate = match_only("PATCH", "/item/", 200),
     action = check_item_was_merged,
-)
-
-def replace_existing_item(State, response):
-    """
-    Adds or replaces an item in our model's state.
-    """
-    item = response["body"]
-    item_id = str(int(item["id"]))
-    if len(State["items"]) != 0:
-        # Our model already knows the items (a previous GET HTTP request
-        #   must have populated State["items"]).
-        # Then we can make sure the item being updated is in there.
-        AssertThat(State["items"]).containsKey(item_id)
-    State["items"][item_id] = item
-    return State
-
-TriggerActionAfterProbe(
-    name = "Updates an item in model state",
-    probe = ("monkey", "http", "response"),
-    predicate = match_only("PATCH", "/item/", 200),
-    action = replace_existing_item,
 )

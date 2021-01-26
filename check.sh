@@ -7,6 +7,7 @@ MONKEY=${MONKEY:-monkey}
 VVV=${VVV:-}
 STAR=${STAR:-}
 TIMEOUT=${TIMEOUT:-30s}
+SEED=${SEED:-}
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
 # Test like CI but sequentially
@@ -104,28 +105,30 @@ check() {
     fi
     intensity=999 # TODO: drop --intensity
 
-    set +e
-    $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --no-shrinking; code=$?
-    set -e
-    if  [[ $code -ne $T ]]; then
-        info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
-        return 1
-    fi
+    if [[ -z "$SEED" ]]; then
+        set +e
+        $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --no-shrinking; code=$?
+        set -e
+        if  [[ $code -ne $T ]]; then
+            info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
+            return 1
+        fi
 
-    seed=''; seedfile=$(mktemp)
-    set +e
-    $MONKEY pastseed >"$seedfile" 2>&1; code=$?
-    set -e
-    seed=$(cat "$seedfile")
-    rm "$seedfile"
-    if [[ $code -ne 0 ]] || [[ -z "$seed" ]]; then
-        info "$branch" "$STAR" V="$V" "S=0 (got $code)" ...failed
-        echo "$seedfile"
-        echo "$seed"
-        return 1
+        seedfile=$(mktemp)
+        set +e
+        $MONKEY pastseed >"$seedfile" 2>&1; code=$?
+        set -e
+        SEED=$(cat "$seedfile")
+        rm "$seedfile"
+        if [[ $code -ne 0 ]] || [[ -z "$SEED" ]]; then
+            info "$branch" "$STAR" V="$V" "S=0 (got $code)" ...failed
+            echo "$seedfile"
+            echo "$SEED"
+            return 1
+        fi
     fi
     set +e
-    $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --seed=$seed; code=$?
+    $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --seed=$SEED; code=$?
     set -e
     if  [[ $code -ne $T ]]; then
         info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
