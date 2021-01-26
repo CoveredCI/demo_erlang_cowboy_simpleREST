@@ -101,7 +101,7 @@ check() {
 
     timeout=$TIMEOUT
     if [[ $T -ne 0 ]]; then
-        timeout=30m # TODO: bring this down
+        timeout=5m
     fi
     intensity=999 # TODO: drop --intensity
 
