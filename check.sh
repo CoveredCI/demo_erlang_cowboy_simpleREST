@@ -56,12 +56,15 @@ Ts[$i]=2
 ((i+=1))
 
 
-$MONKEY --version
-rebar3 clean --all
-rebar3 as prod release
 info() {
     printf '\e[1;3m%s\e[0m\n' "$*"
 }
+
+info Version
+$MONKEY --version
+rebar3 clean --all
+rebar3 as prod release
+
 sed_i() {
     local expr=$1; shift
     local file=$1; shift
@@ -83,6 +86,7 @@ setup() {
 }
 
 check() {
+    info fmt
     set +e
     $MONKEY $VVV fmt; code=$?
     set -e
@@ -91,6 +95,7 @@ check() {
         return 1
     fi
 
+    info lint
     set +e
     $MONKEY $VVV lint; code=$?
     set -e
@@ -106,6 +111,7 @@ check() {
     intensity=999 # TODO: drop --intensity
 
     if [[ -z "$SEED" ]]; then
+        info fuzz no-shrinking
         set +e
         $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --no-shrinking; code=$?
         set -e
@@ -114,6 +120,7 @@ check() {
             return 1
         fi
 
+        info pastseed
         seedfile=$(mktemp)
         set +e
         $MONKEY pastseed >"$seedfile" 2>&1; code=$?
@@ -126,7 +133,11 @@ check() {
             echo "$SEED"
             return 1
         fi
+    else
+        info "Given SEED=$SEED"
     fi
+
+    info fuzz shrink seed
     set +e
     $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --seed=$SEED; code=$?
     set -e
