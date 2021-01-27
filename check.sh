@@ -120,18 +120,20 @@ check() {
             return 1
         fi
 
-        info pastseed
-        seedfile=$(mktemp)
-        set +e
-        $MONKEY pastseed >"$seedfile" 2>&1; code=$?
-        set -e
-        SEED=$(cat "$seedfile")
-        rm "$seedfile"
-        if [[ $code -ne 0 ]] || [[ -z "$SEED" ]]; then
-            info "$branch" "$STAR" V="$V" "S=0 (got $code)" ...failed
-            echo "$seedfile"
-            echo "$SEED"
-            return 1
+        if [[ $V -eq 0 ]]; then
+            info pastseed
+            seedfile=$(mktemp)
+            set +e
+            $MONKEY pastseed >"$seedfile" 2>&1; code=$?
+            set -e
+            SEED=$(cat "$seedfile")
+            rm "$seedfile"
+            if [[ $code -ne 0 ]] || [[ -z "$SEED" ]]; then
+                info "$branch" "$STAR" V="$V" "S=0 (got $code)" ...failed
+                echo "$seedfile"
+                echo "$SEED"
+                return 1
+            fi
         fi
     else
         info "Given SEED=$SEED"
