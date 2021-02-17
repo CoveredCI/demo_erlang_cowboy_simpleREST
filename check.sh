@@ -59,6 +59,10 @@ Ts[$i]=2
 info() {
     printf '\e[1;3m%s\e[0m\n' "$*"
 }
+error() {
+    echo "( SEED=$($MONKEY pastseed) )"
+    printf '\e[1;3m%s ...failed\e[0m\n' "$*"
+}
 
 info Version
 $MONKEY --version
@@ -91,7 +95,7 @@ check() {
     $MONKEY $VVV fmt; code=$?
     set -e
     if  [[ $code -ne 0 ]]; then
-        info "$branch" "$STAR" "F=0 (got $code)" ...failed
+        error "$branch" "$STAR" "F=0 (got $code)"
         return 1
     fi
 
@@ -100,7 +104,7 @@ check() {
     $MONKEY $VVV lint; code=$?
     set -e
     if  [[ $code -ne $V ]]; then
-        info "$branch" "$STAR" "V=$V (got $code)" T="$T" ...failed
+        error "$branch" "$STAR" "V=$V (got $code)" T="$T"
         return 1
     fi
 
@@ -116,7 +120,7 @@ check() {
         $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --no-shrinking; code=$?
         set -e
         if  [[ $code -ne $T ]]; then
-            info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
+            error "$branch" "$STAR" V="$V" "T=$T (got $code)"
             return 1
         fi
 
@@ -129,7 +133,7 @@ check() {
             SEED=$(cat "$seedfile")
             rm "$seedfile"
             if [[ $code -ne 0 ]] || [[ -z "$SEED" ]]; then
-                info "$branch" "$STAR" V="$V" "S=0 (got $code)" ...failed
+                error "$branch" "$STAR" V="$V" "S=0 (got $code)"
                 echo "$seedfile"
                 echo "$SEED"
                 return 1
@@ -144,7 +148,7 @@ check() {
     $MONKEY $VVV fuzz --intensity=$intensity --time-budget=$timeout --seed=$SEED; code=$?
     set -e
     if  [[ $code -ne $T ]]; then
-        info "$branch" "$STAR" V="$V" "T=$T (got $code)" ...failed
+        error "$branch" "$STAR" V="$V" "T=$T (got $code)"
         return 1
     fi
 
