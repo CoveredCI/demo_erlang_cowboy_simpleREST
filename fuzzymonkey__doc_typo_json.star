@@ -10,7 +10,7 @@
 #  no changes to documentation will be taken into account.
 
 OpenAPIv3(
-    name = "my simple model",
+    name = "my_simple_spec",
     # A typo was introduced in the documentation!
     file = "priv/openapi3v1.json",
     host = "http://localhost:6773",
@@ -35,125 +35,101 @@ echo Stopped
 
 ## A simple check that runs after every HTTP call
 
-def respondsUnder300ms(State, response):
-    AssertThat(response["elapsed_ns"]).isAtMost(300e6)
-
-TriggerActionAfterProbe(
-    name = "Acceptably fast",
-    probe = ("monkey", "http", "response"),
-    predicate = lambda State, response: True,
-    action = respondsUnder300ms,
+Check(
+    name = "responds_within_300ms",
+    hook = lambda ctx: assert.that(ctx.response.elapsed_ns).is_at_most(300e6),
+    tags = ["timing"],
 )
 
 ## A stateful model checking our CRUD Web app
 
-State = {
-    "items": {},  # map of ItemID (str) to Item (dict)
-}
-
-# Return State in order to commit its changes:
-def remove_all_items(State, _response):
-    State["items"].clear()
-    return State
-
-TriggerActionAfterProbe(
-    name = "Remove all items from model state",
-    probe = ("monkey", "http", "response"),
-    predicate = lambda State, response: all([
-        response["request"]["method"] == "DELETE",
-        "/items" in response["request"]["url"],
-        response["status_code"] == 204,
-    ]),
-    action = remove_all_items,
-)
-
-def compare_all(State, items):
-    for item_id, item in State["items"].items():
-        AssertThat(item).isIn(items)
-
-TriggerActionAfterProbe(
-    name = "Compare items seen with remote data",
-    probe = ("monkey", "http", "response"),
-    predicate = lambda State, response: all([
-        response["request"]["method"] == "GET",
-        "/items" in response["request"]["url"],
-        response["status_code"] == 200,
-    ]),
-    action = lambda State, response: compare_all(State, response["body"]),
-)
-
-def match_only(method, path, status):
-    return lambda State, response: all([
-        response["request"]["method"] == method,
-        path in response["request"]["url"],
-        response["status_code"] == status,
+def matches(ctx, method, path, status):
+    return all([
+        ctx.request.method == method,
+        path in ctx.request.url,
+        ctx.response.status_code == status,
     ])
 
-def item_id(response):
-    start = response["request"]["url"].index("/item/")
-    return str(int(response["request"]["url"][start + len("/item/"):]))
+def url_item_id(req):
+    start = req.url.index("/item/")
+    id_str = req.url[start + len("/item/"):]
+    return str(int(id_str))
 
-def remove_single_item(State, response):
-    State["items"].pop(item_id(response), None)
-    return State
+def model_single_user(ctx):
+    """A user model of my Web app that stores items"""
 
-TriggerActionAfterProbe(
-    name = "Remove item from model state",
-    probe = ("monkey", "http", "response"),
-    predicate = match_only("DELETE", "/item/", 204),
-    action = remove_single_item,
+    # Remove all items from model state
+    if matches(ctx, "DELETE", "/items", 204):
+        #######FIXME Return State in order to commit its changes:
+        ctx.state.clear()
+        return
+
+    # Compare items seen with remote data
+    if matches(ctx, "GET", "/items", 200) and ctx.response.body != []:
+        body = ctx.response.body
+        for item_id, item in ctx.state.items():
+            assert.that(item).is_in(body)
+        return
+
+    # Remove item from model state
+    if matches(ctx, "DELETE", "/item/", 204):
+        item_id = url_item_id(ctx.request)
+        ctx.state.pop(item_id, None)
+        return
+
+    # Add/update a single item in model state
+    if any([
+        matches(ctx, "PUT", "/item/", 201),
+        matches(ctx, "POST", "/item/", 200),
+        matches(ctx, "PATCH", "/item/", 200),
+    ]):
+        item = ctx.response.body
+        item_id = str(int(item["id"]))
+        ctx.state[item_id] = item
+        return
+
+    # Check reading an item matches model state
+    if matches(ctx, "GET", "/item/", 200):
+        item = ctx.response.body
+        item_id = str(int(item["id"]))
+        if item_id in ctx.state:
+            assert.that(ctx.state[item_id]).is_equal_to(item)
+        return
+
+Check(
+    name = "some_simple_web_app_model",
+    hook = model_single_user,
+    state = {},  # map of ItemID (str) to Item (dict)
+    tags = ["crud", "api_contract"],
 )
 
-def ensure_matching_contents_if_model_knows_about_item(S, response):
-    item = response["body"]
-    item_id = str(int(item["id"]))
-    if item_id in S["items"]:
-        AssertThat(S["items"][item_id]).isEqualTo(item)
+def verify_overwriting(ctx):
+    """Ensure PATCH returns it's input untouched"""
 
-TriggerActionAfterProbe(
-    name = "Check reading an item matches model state",
-    probe = ("monkey", "http", "response"),
-    predicate = match_only("GET", "/item/", 200),
-    action = ensure_matching_contents_if_model_knows_about_item,
-)
+    #
+    # Note: you can ensure your assertions work as you intend
+    #
+    # This passes (which can be surprising):
+    assert.that({"my": "value"}).contains_all_in({"my": 42})
+    # This however fails:
+    # assert.that({"my": "value"}).contains_all_in({"key": 42})
 
-def add_item(State, response):
-    """Adds or updates a single item in State"""
-    item = response["body"]
-    item_id = str(int(item["id"]))
-    State["items"][item_id] = item
-    return State
+    if not matches(ctx, "PATCH", "/item/", 200):
+        return
 
-TriggerActionAfterProbe(
-    name = "Add/update a single item in model state",
-    probe = ("monkey", "http", "response"),
-    predicate = lambda State, response: any([
-        match_only("PUT", "/item/", 201)(State, response),
-        match_only("POST", "/item/", 200)(State, response),
-        match_only("PATCH", "/item/", 200)(State, response),
-    ]),
-    action = add_item,
-)
+    # Ensure an item gets merged correctly
+    patch = ctx.request.body
+    print("Updating item #{}\n  with: {}".format(url_item_id(ctx.request), patch))
 
-#
-# Note: you can ensure your assertions work as you intend
-#
-# This passes (which can be surprising):
-AssertThat({"my": "value"}).containsAllIn({"my": 42})
+    # PATCH /item/{item_id} returns the ID in the body
+    merged = {k: v for k, v in ctx.response.body.items() if k != "id"}
 
-def check_item_was_merged(_State, response):
-    """Ensures all pairs in request payload appear in response body"""
-    patch = response["request"]["body"]
-    print("Updating item #{}".format(item_id(response)))
-    print("  with: {}".format(patch))
-    merged = response["body"]
-    merged.pop("id")  # PATCH /item/{item_id} returns the ID in the body
+    # Ensures all pairs in request payload appear in response body
     for key, value in patch.items():
-        AssertThat(merged).containsItem(key, value)
+        assert.that(merged).contains_item(key, value)
 
-TriggerActionAfterProbe(
-    name = "Ensure an item gets merged correctly",
-    probe = ("monkey", "http", "response"),
-    predicate = match_only("PATCH", "/item/", 200),
-    action = check_item_was_merged,
+Check(
+    name = "verify_overwriting",
+    hook = verify_overwriting,
+    tags = ["api_contract"],
 )
