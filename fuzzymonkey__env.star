@@ -37,7 +37,7 @@ echo Stopped $my_host:6773
 
 Check(
     name = "responds_within_300ms",
-    hook = lambda ctx: assert.that(ctx.response.elapsed_ns).is_at_most(300e6),
+    after_response = lambda ctx: assert.that(ctx.response.elapsed_ns).is_at_most(300e6),
     tags = ["timing"],
 )
 
@@ -98,7 +98,7 @@ def model_single_user(ctx):
 
 Check(
     name = "some_simple_web_app_model",
-    hook = model_single_user,
+    after_response = model_single_user,
     state = {},  # map of ItemID (str) to Item (dict)
     tags = ["crud", "api_contract"],
 )
@@ -130,6 +130,6 @@ def verify_overwriting(ctx):
 
 Check(
     name = "verify_overwriting",
-    hook = verify_overwriting,
+    after_response = verify_overwriting,
     tags = ["api_contract"],
 )
