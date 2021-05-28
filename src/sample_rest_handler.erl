@@ -85,7 +85,7 @@ id(Req) ->
                     Req3 = cowboy_req:set_resp_header(<<"location">>, ?ITEM(ItemId), Req2),
                     Req4 = cowboy_req:set_resp_body(jsx:encode(Rep), Req3),
                     Req5 = cowboy_req:reply(201, Req4),
-                    ?LOG_DEBUG("PUT"),
+                    ?LOG_DEBUG("PUT ~p (generated ID)", [ItemId]),
                     {stop, Req5, State};
                 ItemId ->
                     Rep = sample_crud_store:put(ItemId, Item),

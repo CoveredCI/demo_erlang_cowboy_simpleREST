@@ -6,7 +6,7 @@ git: {depth: false}
 before_script:
 - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
 - |
-  curl -# --fail --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+  curl -# --fail -L --output /usr/local/bin/rebar3 https://github.com/erlang/rebar3/releases/download/3.16.1/rebar3
   chmod +x /usr/local/bin/rebar3
   rebar3 --version
 - |
